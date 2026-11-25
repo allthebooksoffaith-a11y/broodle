@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Broodle</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#14222f">
+<meta property="og:title" content="Broodle">
+<meta property="og:description" content="A cozy little puzzle about a very long cat.">
+<meta property="og:image" content="https://allthebooksoffaith-a11y.github.io/broodle/icon.png">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+body { margin: 0; min-height: 100vh; min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 18px; color: #fff3d8; background: radial-gradient(circle at 50% 45%, #24435f, #14222f 68%); font: 600 17px/1.4 "Trebuchet MS", "Segoe UI", system-ui, sans-serif; text-align: center; }
+h1 { display: flex; align-items: center; margin: 0; font: 700 min(62px, 15vw)/1 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; letter-spacing: -1.5px; color: #f5bd5c; text-shadow: 0 3px 0 rgb(74 42 20 / 85%), 0 5px 16px rgb(8 18 24 / 60%); }
+i { width: .6em; height: .76em; margin: .12em .03em 0; border-radius: 50% 50% 48% 48% / 58% 58% 42% 42%; background: radial-gradient(circle at 35% 30%, #fffdf2, #eccf9b 75%); transform-origin: 50% 92%; animation: rock 1.05s ease-in-out infinite; }
+i + i { animation-delay: -.46s; }
+p { max-width: 300px; margin: 0; padding: 0 20px; }
+@keyframes rock { 0%, 100% { transform: rotate(-9deg); } 50% { transform: rotate(10deg); } }
+@media (prefers-reduced-motion: reduce) { i { animation: none; } }
+</style>
+</head>
+<body>
+<h1 aria-label="Broodle">Br<i></i><i></i>dle</h1>
+<p id="words" role="status"></p>
+<script>
+(async () => {
+  const say = (text) => { document.getElementById('words').textContent = text; };
+  const bytesOf = (text) => Uint8Array.from(atob(text.replace(/-/g, '+').replace(/_/g, '/')), (each) => each.charCodeAt(0));
+  try {
+    const key = await crypto.subtle.importKey('raw', bytesOf(location.hash.slice(1)), 'AES-GCM', false, ['decrypt']);
+    const isPacked = typeof DecompressionStream === 'function';
+    const answer = await fetch(isPacked ? 'nest.bin' : 'nest-plain.bin', { cache: 'no-cache' });
+    if (!answer.ok) throw new Error('not there');
+    const all = new Uint8Array(await answer.arrayBuffer());
+    const open = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: all.slice(0, 12) }, key, all.slice(12));
+    const text = isPacked ? await new Response(new Blob([open]).stream().pipeThrough(new DecompressionStream('gzip'))).text() : new TextDecoder().decode(open);
+    document.open();
+    document.write(text);
+    document.close();
+  } catch (error) {
+    say(location.hash.length < 10 ? 'This nest only opens with its whole link. Ask whoever sent it to you.' : 'The nest did not open. Is the link whole? Then try again in a moment.');
+  }
+})();
+</script>
+</body>
+</html>
